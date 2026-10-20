@@ -53,7 +53,13 @@ export class HudScene extends Phaser.Scene {
       color: '#8a7f70',
     });
     this.controls = this.add
-      .text(MARGIN, 0, CONTROLS, { ...TEXT_STYLE, fontSize: '13px', color: '#6a6055' })
+      .text(MARGIN, 0, CONTROLS, {
+        ...TEXT_STYLE,
+        fontSize: '15px',
+        color: '#a89c88',
+        stroke: '#000000',
+        strokeThickness: 3,
+      })
       .setOrigin(0, 1);
 
     this.nameLabel = this.add

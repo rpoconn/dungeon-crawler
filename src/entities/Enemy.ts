@@ -7,6 +7,7 @@ import { LUNGE, SUMMON, type EnemyStats } from '../logic/enemies';
 import { hasLineOfSight, stepToward } from '../logic/pathing';
 import { lightUp } from '../systems/LightingSystem';
 import { BEHAVIOURS } from './behaviours';
+import { playMotion } from './motion';
 import type { Player } from './Player';
 
 /** Wakes up when the walk to the player is this many steps or fewer… */
@@ -183,6 +184,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   protected preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
+    playMotion(this, this.body.velocity);
     if (this.dying || time < this.stunnedUntil || this.world.player.dead) {
       if (this.world.player.dead) this.halt();
       return;

@@ -165,15 +165,18 @@ Goal: log out mid-floor, log back in, and you are on the same floor at the same 
 
 **Notes:** Nothing cut. All four juice items are in. The player flashes red when hit, and the camera shakes harder the bigger the share of max hp the hit takes (a forced, bigger shake on death). Enemies already flashed white when struck. Now they also burst into sparks of their own colour on death. Torch flicker went further than a tint pulse: `logic/sconces.ts` (seeded, unit-tested) puts up to 7 wall torches on the top walls of rooms, each with a flickering flame sprite and its own Light2D light, and the player's torch flickers too. The flames still show on the canvas renderer. The sconce cap leaves room for the player's torch and the exit glow within Light2D's default 10 lights. The QA pass ran in headless Chrome against the dev servers: register, walk and swing with real key input, take a hit, kill an enemy on each of floors 1–3, take the stairs to floor 4, then reload and log back in to land on floor 4 again. Nothing was blocking. The only console error was a 404 for `/favicon.ico`, fixed with an inline SVG icon. Restarting a floor repeatedly showed no growth in listeners, objects, tweens or lights. FPS sagged over time in headless SwiftShader, but just as much on the Phase 4 build, so that comes from the software renderer, not a leak. `main.ts` exposes `window.game` in dev builds only, for console and test-browser poking. The README now has a "How to play" section; run instructions for both servers were already there.
 
-## Phase 6 — Art (10 min, only if Phases 0–5 shipped)
+## Phase 6 — Art (10 min, only if Phases 0–5 shipped) ✅ Completed
 
 Swap generated textures for a CC0 tileset (candidate: 0x72 "DungeonTileset II" on itch.io, 16px, Diablo-adjacent). Only `BootScene` changes, since everything else references texture keys. If pulling assets eats more than 10 minutes, revert.
+
+**Notes:** Done with the 0x72 DungeonTileset II v1.7 sheet (CC0), shipped as one PNG in `public/tileset/`; `scenes/tileset.ts` holds the frame rects from the pack's `tile_list`. `BootScene` now loads the sheet and cuts every texture key out of it at 2x onto canvas textures, so all sprites stay 32px and no physics bodies changed. Bolts, sparks and wall flames have no counterpart in the pack and stay procedural. Mapping: player = knight, skeleton = skelet, zombie = ogre (the pack's big zombie is a brown mound), bat = imp (no bats in the pack), cultist = orc shaman, ghoul = chort, lich = necromancer; chests, the red flask and the stairs/ladder come from the pack too. Each creature is trimmed to its drawn pixels before scaling, since the knight's 28px frames are mostly headroom and would otherwise come out smallest. Creatures get 4-frame idle and run loops (`entities/motion.ts` picks one by speed; the lich has no run strip and loops its idle). Changes outside `BootScene`: `GameScene` now picks a brick-face wall for walls with floor below and a dark wall top for the rest, the floor uses all 8 floor tiles weighted toward the plain one, and the Dockerfile copies `public/` so the production image ships the sheet. Checked in headless Chrome: the textures render under Light2D, and enemies switch between idle and run as they hunt.
 
 ## Stretch (outside the budget)
 
 - Isometric projection (Phaser isometric tilemap orientation + sprite depth sort).
 - Full enemy state (hp, position) persisted in the save. Kills already are, as of Phase 4.
 - Leaderboard endpoint (fastest clear).
+- Music
 
 ---
 
@@ -204,7 +207,7 @@ Swap generated textures for a CC0 tileset (candidate: 0x72 "DungeonTileset II" o
 | Resume where you left off | `SaveSystem`, Phase 4 |
 | Logout button | `HudScene` |
 | Easy-to-navigate code | one concern per file, `logic/` is Phaser-free |
-| Diablo aesthetic | dark palette, vignette, CC0 tileset in Phase 6 |
+| Diablo aesthetic | dark palette, vignette, torchlight, 0x72 CC0 tileset (Phase 6) |
 
 ## How to run
 

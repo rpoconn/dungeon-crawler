@@ -15,7 +15,7 @@ export const SCENES = {
   gameOver: 'GameOverScene',
 } as const;
 
-/** Texture keys generated in BootScene. Enemy textures are `enemyTexture(kind)`. */
+/** Texture keys built in BootScene. Enemy textures are `enemyTexture(kind)`. */
 export const TEXTURES = {
   tiles: 'tiles',
   stairsDown: 'stairs-down',
@@ -33,6 +33,13 @@ export function enemyTexture(kind: EnemyKind): string {
   return `enemy-${kind}`;
 }
 
+export type Motion = 'idle' | 'run';
+
+/** Looping animation BootScene registers for each creature texture (player and enemies). */
+export function animKey(texture: string, motion: Motion): string {
+  return `${texture}-${motion}`;
+}
+
 /** Events GameScene emits on its own `events` emitter; HudScene listens. */
 export const GAME_EVENTS = {
   /** (hp: number, maxHp: number, delta: number) */
@@ -45,6 +52,10 @@ export const GAME_EVENTS = {
 
 /** Frame indices in the `tiles` tileset texture. */
 export const TILESET = {
-  wall: 0,
-  floors: [1, 2, 3],
+  /** Brick face, for walls with floor directly below. */
+  wallFace: 0,
+  /** Wall top, for the other walls around a room. */
+  wallTop: 1,
+  /** Frame 2 is the plain floor; it is listed several times so the cracked ones stay occasional. */
+  floors: [2, 2, 2, 2, 2, 2, 2, 3, 4, 5, 6, 7, 8, 9],
 } as const;

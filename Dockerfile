@@ -7,6 +7,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY index.html tsconfig.json vite.config.ts ./
 COPY src ./src
+COPY public ./public
 # Empty = same-origin requests, since FastAPI serves the UI.
 ARG VITE_API_URL=""
 ENV VITE_API_URL=${VITE_API_URL}

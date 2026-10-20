@@ -132,7 +132,7 @@ export class GameScene extends Phaser.Scene {
     const tileset = map.addTilesetImage(TEXTURES.tiles, TEXTURES.tiles, TILE_SIZE, TILE_SIZE);
     const layer = tileset && map.createLayer(0, tileset, 0, 0);
     if (!layer) throw new Error('Failed to build the floor tilemap');
-    layer.setCollision(TILESET.wall);
+    layer.setCollision([TILESET.wallFace, TILESET.wallTop]);
     return layer;
   }
 }
@@ -140,12 +140,14 @@ export class GameScene extends Phaser.Scene {
 /**
  * Tileset frame for a grid cell. Only walls that touch a floor tile are drawn; solid rock
  * further in stays empty (black), which reads as a carved-out dungeon rather than a brick field.
+ * Walls with floor below show their brick face; the rest show their top.
  */
 function tileIndex(floor: Floor, x: number, y: number): number {
   if (tileAt(floor, x, y) === TILE.floor) return Phaser.Math.RND.pick([...TILESET.floors]);
+  const wall = isFloor(floor, x, y + 1) ? TILESET.wallFace : TILESET.wallTop;
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
-      if (isFloor(floor, x + dx, y + dy)) return TILESET.wall;
+      if (isFloor(floor, x + dx, y + dy)) return wall;
     }
   }
   return -1;

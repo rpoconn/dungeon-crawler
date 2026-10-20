@@ -118,6 +118,7 @@ src/                  Phaser game (TypeScript)
   entities/           Player, enemies, chests, projectiles, pickups
   logic/              Pure game rules (dungeon gen, combat, loot, saves) with unit tests
   api/                fetch client, auth and save calls
+public/tileset/       0x72 DungeonTileset II sprite sheet (CC0)
 server/               FastAPI app
   main.py             App, CORS, /health, static UI mount
   auth.py             /auth/register, /auth/login, /auth/logout
@@ -128,3 +129,7 @@ docker-compose.yml    `dev` profile (live reload) and `prod` profile (production
 render.yaml           Render Blueprint
 run.sh, run.ps1       One-command start scripts
 ```
+
+## Credits
+
+Art is [DungeonTileset II](https://0x72.itch.io/dungeontileset-ii) v1.7 by 0x72, released under CC0. `src/scenes/tileset.ts` maps its frames to the game's textures. The pack has no bats, so bats are drawn as its imps, and zombies as its ogres.

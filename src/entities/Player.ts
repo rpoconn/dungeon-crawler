@@ -3,6 +3,7 @@ import { GAME_EVENTS, TEXTURES } from '../config';
 import { applyDamage, applyHeal, isDead, type Swing } from '../logic/combat';
 import type { Weapon } from '../logic/weapons';
 import { lightUp } from '../systems/LightingSystem';
+import { playMotion } from './motion';
 
 const SPEED = 170;
 /** Smaller than a tile so the player slides through one-tile corridors without snagging. */
@@ -129,6 +130,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   protected preUpdate(time: number, delta: number): void {
     super.preUpdate(time, delta);
+    playMotion(this, this.body.velocity);
     if (!this.keys || this.dead) return;
     if (Phaser.Input.Keyboard.JustDown(this.keys.attack)) this.swing();
     if (time < this.stunnedUntil) return;
