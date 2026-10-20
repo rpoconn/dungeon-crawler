@@ -1,0 +1,58 @@
+# Usage (or use ./run.sh / .\run.ps1):
+#   docker compose --profile dev up --build    UI on :15173 (hot reload), API on :18000 (auto reload)
+#   docker compose --profile prod up --build   the production image on :18080
+#
+# Host ports are deliberately different from the non-Docker setup (5173 / 8000)
+# so the Docker stack and a local `npm run dev` / debug session can run side by side.
+
+services:
+  api:
+    profiles: [dev]
+    image: ghcr.io/astral-sh/uv:0.12.20-python3.13-trixie-slim
+    working_dir: /app/server
+    command: sh -c "uv sync --frozen && uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000"
+    environment:
+      # Keep the venv out of the bind mount so a host (e.g. Windows) .venv is never used.
+      UV_PROJECT_ENVIRONMENT: /opt/venv
+      UV_LINK_MODE: copy
+      # File events don't cross Docker Desktop bind mounts; poll so --reload works.
+      WATCHFILES_FORCE_POLLING: 'true'
+      CORS_ORIGINS: http://localhost:15173,http://127.0.0.1:15173
+      # Own DB, not the bind-mounted server/game.db a local server may be using.
+      DATABASE_PATH: /data/game.db
+    volumes:
+      - ./server:/app/server
+      - api-data:/data
+      - api-venv:/opt/venv
+      - uv-cache:/root/.cache/uv
+    ports:
+      - '18000:8000'
+
+  web:
+    profiles: [dev]
+    image: node:24-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    environment:
+      DOCKER: '1'
+      # The browser runs on the host, so it reaches the API via its published port.
+      VITE_API_URL: http://localhost:18000
+    volumes:
+      - .:/app
+      # Container-only node_modules so host binaries (Windows/macOS) are never mixed in.
+      - /app/node_modules
+    ports:
+      - '15173:5173'
+    depends_on:
+      - api
+
+  app:
+    profiles: [prod]
+    build: .
+    ports:
+      - '18080:8000'
+
+volumes:
+  api-data:
+  api-venv:
+  uv-cache:

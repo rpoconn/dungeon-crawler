@@ -1,10 +1,11 @@
 """SQLite connection and schema."""
 
+import os
 import sqlite3
 from collections.abc import Iterator
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "game.db"
+DB_PATH = Path(os.environ.get("DATABASE_PATH", Path(__file__).parent / "game.db"))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -34,6 +35,7 @@ def connect() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with connect() as conn:
         conn.executescript(SCHEMA)
 

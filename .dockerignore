@@ -1,0 +1,7 @@
+node_modules
+dist
+server/.venv
+server/game.db
+**/__pycache__
+.git
+.vscode
