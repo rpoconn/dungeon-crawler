@@ -156,12 +156,14 @@ Goal: log out mid-floor, log back in, and you are on the same floor at the same 
 
 **Notes:** Nothing cut. `systems/SaveSystem.ts` autosaves every 10s and on `beforeunload` (keepalive fetch). Leaving a floor goes through `commit(state)`, which stores that exact state and stops autosaving, so a late tick can't overwrite it. The three ways to leave a floor: the stairs store the next floor (or the completed run), death stores a fresh floor-1 run on the spot, and logout stores the current snapshot. `api/saves.ts` queues writes so they reach the server in order, and logs failures instead of throwing. This also closes the Phase 3 gap: the save now carries `openedChests` and `slain` (indices into the seeded spawn plan), so a resumed floor comes back with those chests open and those enemies gone. The server defaults both to `[]`, so older saves still load. Logging in to a completed run reuses `GameOverScene` ("You escaped", with the subtitle "Your last run cleared all ten floors. Play again?"), and "Play again" stores the fresh run before starting it. Not persisted: enemy hp, potions on the floor, and summoned bats. A resumed floor brings back wounded enemies at full hp and drops nothing that was lying on the ground.
 
-## Phase 5 — Polish and QA pass (15 min)
+## Phase 5 — Polish and QA pass (15 min) ✅ Completed
 
 1. Play through 3 floors; fix anything blocking.
 2. Juice, in priority order: hit flash, screen shake on damage, enemy death particle burst, torch flicker (random tint pulse on a few wall tiles).
 3. `npm run check` clean. README with run instructions for both servers.
 4. Commit.
+
+**Notes:** Nothing cut. All four juice items are in. The player flashes red when hit, and the camera shakes harder the bigger the share of max hp the hit takes (a forced, bigger shake on death). Enemies already flashed white when struck. Now they also burst into sparks of their own colour on death. Torch flicker went further than a tint pulse: `logic/sconces.ts` (seeded, unit-tested) puts up to 7 wall torches on the top walls of rooms, each with a flickering flame sprite and its own Light2D light, and the player's torch flickers too. The flames still show on the canvas renderer. The sconce cap leaves room for the player's torch and the exit glow within Light2D's default 10 lights. The QA pass ran in headless Chrome against the dev servers: register, walk and swing with real key input, take a hit, kill an enemy on each of floors 1–3, take the stairs to floor 4, then reload and log back in to land on floor 4 again. Nothing was blocking. The only console error was a 404 for `/favicon.ico`, fixed with an inline SVG icon. Restarting a floor repeatedly showed no growth in listeners, objects, tweens or lights. FPS sagged over time in headless SwiftShader, but just as much on the Phase 4 build, so that comes from the software renderer, not a leak. `main.ts` exposes `window.game` in dev builds only, for console and test-browser poking. The README now has a "How to play" section; run instructions for both servers were already there.
 
 ## Phase 6 — Art (10 min, only if Phases 0–5 shipped)
 

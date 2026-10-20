@@ -5,7 +5,7 @@ import { GameOverScene } from './scenes/GameOverScene';
 import { GameScene } from './scenes/GameScene';
 import { HudScene } from './scenes/HudScene';
 
-new Phaser.Game({
+const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
   backgroundColor: '#0b0b10',
@@ -14,3 +14,6 @@ new Phaser.Game({
   physics: { default: 'arcade', arcade: { debug: false } },
   scene: [BootScene, AuthScene, GameScene, HudScene, GameOverScene],
 });
+
+// Dev-only handle for poking at the running game from the console or a test browser.
+if (import.meta.env.DEV) Object.assign(window, { game });

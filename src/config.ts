@@ -25,6 +25,8 @@ export const TEXTURES = {
   chestOpen: 'chest-open',
   potion: 'potion',
   bolt: 'bolt',
+  spark: 'spark',
+  flame: 'flame',
 } as const;
 
 export function enemyTexture(kind: EnemyKind): string {

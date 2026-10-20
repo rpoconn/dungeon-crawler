@@ -30,6 +30,8 @@ export class BootScene extends Phaser.Scene {
     this.paint(TEXTURES.chestOpen, T, T, paintOpenChest);
     this.paint(TEXTURES.potion, T, T, paintPotion);
     this.paint(TEXTURES.bolt, 12, 12, paintBolt);
+    this.paint(TEXTURES.spark, 4, 4, (g) => g.fillStyle(0xffffff).fillRect(0, 0, 4, 4));
+    this.paint(TEXTURES.flame, 12, 20, paintFlame);
 
     this.scene.start(SCENES.auth);
   }
@@ -126,6 +128,14 @@ function paintOpenChest(g: Phaser.GameObjects.Graphics): void {
 function paintBolt(g: Phaser.GameObjects.Graphics): void {
   g.fillStyle(0xffffff, 0.3).fillCircle(6, 6, 6);
   g.fillStyle(0xffffff, 1).fillCircle(6, 6, 3);
+}
+
+/** A wall sconce: iron bracket under a flame. Left unlit in-game so it glows in the dark. */
+function paintFlame(g: Phaser.GameObjects.Graphics): void {
+  g.fillStyle(0x3a3029).fillRect(4, 14, 4, 6); // bracket
+  g.fillStyle(0xff5a1a, 0.9).fillEllipse(6, 9, 10, 14);
+  g.fillStyle(0xffb040).fillEllipse(6, 10, 6, 9);
+  g.fillStyle(0xfff0c0).fillEllipse(6, 11, 3, 4);
 }
 
 function paintPotion(g: Phaser.GameObjects.Graphics): void {

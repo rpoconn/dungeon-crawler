@@ -10,6 +10,9 @@ const BODY_SIZE = 18;
 export const PLAYER_RADIUS = BODY_SIZE / 2;
 const INVULNERABLE_MS = 700;
 const KNOCKBACK = { speed: 240, ms: 120 } as const;
+const HIT_FLASH = { colour: 0xff3030, ms: 90 } as const;
+/** Camera shake on a hit: a floor for chip damage, growing with the share of max hp lost. */
+const SHAKE = { ms: 140, min: 0.004, perMaxHp: 0.03 } as const;
 
 /** Events emitted on the Player itself. */
 export const PLAYER_EVENTS = {
@@ -89,6 +92,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const away = new Phaser.Math.Vector2(this.x - (from.x ?? this.x), this.y - (from.y ?? this.y));
     away.normalize().scale(KNOCKBACK.speed);
     this.body.setVelocity(away.x, away.y);
+    this.setTintFill(HIT_FLASH.colour);
+    this.scene.time.delayedCall(HIT_FLASH.ms, () => this.clearTint());
+    const lost = (before - this.hp) / this.maxHp;
+    this.scene.cameras.main.shake(SHAKE.ms, SHAKE.min + SHAKE.perMaxHp * lost);
     this.scene.tweens.add({
       targets: this,
       alpha: 0.3,

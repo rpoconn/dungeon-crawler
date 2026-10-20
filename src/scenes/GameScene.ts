@@ -5,6 +5,7 @@ import { toWorld } from '../logic/coords';
 import { TILE, generateFloor, isFloor, tileAt, type Floor, type Point } from '../logic/dungeon';
 import { seededRng } from '../logic/random';
 import { NO_POSITION, newSave, type SaveState } from '../logic/save';
+import { planSconces } from '../logic/sconces';
 import { planSpawns } from '../logic/spawns';
 import { getWeapon } from '../logic/weapons';
 import { CombatSystem } from '../systems/CombatSystem';
@@ -56,6 +57,10 @@ export class GameScene extends Phaser.Scene {
     const stairsDown = lightUp(this.physics.add.staticImage(...toWorld(exit), TEXTURES.stairsDown));
     stairsDown.body.setSize(TILE_SIZE / 2, TILE_SIZE / 2);
     lighting.glow(...toWorld(exit));
+    // Separate stream from `rng`, so adding sconces never shifts the monster and chest rolls.
+    for (const tile of planSconces(this.floor, seededRng(seed * 97 + level))) {
+      lighting.sconce(...toWorld(tile));
+    }
 
     const weapon = getWeapon(weaponId);
     this.player = new Player(this, ...toWorld(this.spawnTile()), { hp, maxHp, weapon });
@@ -107,7 +112,7 @@ export class GameScene extends Phaser.Scene {
     void this.saves.commit(nextRun);
     const camera = this.cameras.main;
     this.physics.pause();
-    camera.shake(250, 0.01);
+    camera.shake(250, 0.01, true);
     camera.fadeOut(DEATH_FADE_MS, 40, 0, 0);
     camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       this.scene.start(SCENES.gameOver, { outcome: 'death', nextRun } satisfies GameOverData);

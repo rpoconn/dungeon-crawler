@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TILE_SIZE, enemyTexture } from '../config';
+import { TEXTURES, TILE_SIZE, enemyTexture } from '../config';
 import { applyDamage, isDead } from '../logic/combat';
 import { toTile, toTileSpace, toWorld } from '../logic/coords';
 import type { Floor } from '../logic/dungeon';
@@ -18,6 +18,7 @@ const DIRECT_RANGE = 4 * TILE_SIZE;
 const BODY_RADIUS = 9;
 const KNOCKBACK = { speed: 200, ms: 130 } as const;
 const FLASH_MS = 80;
+const BURST = { count: 14, lifespanMs: 450 } as const;
 
 /** What enemies need from the world around them. Implemented by SpawnSystem. */
 export interface EnemyWorld {
@@ -107,10 +108,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     return dead;
   }
 
-  /** Shrinks away, then removes itself. */
+  /** Bursts into sparks of its own colour, shrinks away, then removes itself. */
   die(): void {
     this.dying = true;
     this.body.enable = false;
+    this.burst();
     this.scene.tweens.add({
       targets: this,
       alpha: 0,
@@ -118,6 +120,22 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       duration: 160,
       onComplete: () => this.destroy(),
     });
+  }
+
+  /** Unlit sparks, so the burst reads even at the edge of the torchlight. */
+  private burst(): void {
+    const sparks = this.scene.add
+      .particles(this.x, this.y, TEXTURES.spark, {
+        speed: { min: 50, max: 170 },
+        lifespan: { min: BURST.lifespanMs / 2, max: BURST.lifespanMs },
+        scale: { start: this.stats.scale, end: 0 },
+        alpha: { start: 1, end: 0 },
+        tint: [this.stats.colour, 0xffffff],
+        emitting: false,
+      })
+      .setDepth(11);
+    sparks.explode(Math.round(BURST.count * this.stats.scale));
+    this.scene.time.delayedCall(BURST.lifespanMs, () => sparks.destroy());
   }
 
   setMode(mode: EnemyMode, timer = this.timer): void {

@@ -5,6 +5,16 @@ A top-down, real-time roguelike in the browser. Fight through 10 procedurally ge
 - **Frontend:** Phaser 3 + TypeScript, built with Vite (repo root, `src/`)
 - **Backend:** FastAPI + SQLite, managed with `uv` (`server/`), for accounts and save games
 
+## How to play
+
+| Key                | Action                                      |
+| ------------------ | ------------------------------------------- |
+| WASD / arrow keys  | Move                                        |
+| Space / left click | Attack (click aims the swing at the cursor) |
+| E                  | Open a chest you are standing next to       |
+
+Find the gold-lit stairs down on each floor. Chests hold better weapons, enemies sometimes drop potions (more often when you are hurt), and dying sends you back to floor 1. Clear floor 10 to escape. Your run is saved as you play, so logging out (or closing the tab) and logging back in puts you where you left off.
+
 ## Quick start (Docker)
 
 The only thing you need is [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine with the Compose plugin).
