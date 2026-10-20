@@ -1,5 +1,7 @@
 /** Save blob shape (mirrors server/models.py SaveState) and the fresh-run default. */
 
+import { STARTING_WEAPON } from './weapons';
+
 export interface SaveState {
   level: number;
   seed: number;
@@ -14,7 +16,7 @@ export interface SaveState {
 
 export const NO_POSITION = -1;
 export const START_HP = 100;
-export const START_WEAPON = 'rusty-dagger';
+export const START_WEAPON = STARTING_WEAPON.id;
 
 export function randomSeed(): number {
   return Math.floor(Math.random() * 2 ** 31);

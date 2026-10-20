@@ -22,12 +22,24 @@ export const TEXTURES = {
   stairsUp: 'stairs-up',
   player: 'player',
   chest: 'chest',
+  chestOpen: 'chest-open',
   potion: 'potion',
+  bolt: 'bolt',
 } as const;
 
 export function enemyTexture(kind: EnemyKind): string {
   return `enemy-${kind}`;
 }
+
+/** Events GameScene emits on its own `events` emitter; HudScene listens. */
+export const GAME_EVENTS = {
+  /** (hp: number, maxHp: number, delta: number) */
+  hpChanged: 'hp-changed',
+  /** (weaponName: string) */
+  weaponChanged: 'weapon-changed',
+  /** (message: string) */
+  notice: 'notice',
+} as const;
 
 /** Frame indices in the `tiles` tileset texture. */
 export const TILESET = {

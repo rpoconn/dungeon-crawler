@@ -107,7 +107,7 @@ Goal: walk around a seeded, connected floor with a visible entrance and exit.
 
 **Notes:** Nothing cut. Lighting is a Light2D torch on the player, plus a glow on the exit and a camera vignette (WebGL only). Extras: `logic/enemies.ts` holds only kind ids and colours so far (Phase 3 adds stats). `GameOverScene` exists with victory/death copy. The HUD shows a "Floor N / 10" banner on arrival. `GameScene.snapshot()` records the player's tile, and a valid saved tile is used as the spawn point.
 
-## Phase 3 — Combat: enemies, weapons, health (30 min)
+## Phase 3 — Combat: enemies, weapons, health (30 min) ✅ Completed
 
 Goal: real-time fights that can kill you, with 6 distinct enemy kinds.
 
@@ -131,6 +131,8 @@ Goal: real-time fights that can kill you, with 6 distinct enemy kinds.
 8. Death → `GameOverScene(death)`, resets save to level 1.
 
 **Cut line:** Lich and Ghoul become stat/colour variants of Cultist/Skeleton. Still 6 kinds, less distinct AI.
+
+**Notes:** Nothing cut; all 6 kinds have their own AI. Enemies path to the player along a shared BFS field (`logic/pathing.ts`, recomputed only when the player changes tile), aggro within 10 steps and give up past 18. Ghouls wind up (red tint) before a dash that does double damage; liches summon 2 bats per hit (2.5s cooldown, max 6 alive). Extra pure modules: `logic/random.ts` (seeded RNG helpers), `logic/spawns.ts` (enemy/chest placement, seeded so a resumed floor repopulates the same way; nothing spawns within 12 steps of the entrance), `logic/pathing.ts`, `logic/coords.ts`. Lighting moved out of `GameScene` into `systems/LightingSystem.ts`; `PickupSystem` handles chests and potions. Chests stay within a per-floor tier cap (top tier from floor 7). When the roll is no upgrade, the chest drops a potion instead. Clicking aims the swing at the cursor. Death resets the stored save to a fresh floor-1 run. Known gap until Phase 4: opened chests and killed enemies come back on resume.
 
 ## Phase 4 — Persistence + resume (15 min)
 

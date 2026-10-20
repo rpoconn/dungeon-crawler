@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { SCENES, TEXTURES, TILESET, TILE_SIZE, enemyTexture } from '../config';
-import { ENEMY_COLOURS, ENEMY_KINDS } from '../logic/enemies';
+import { ENEMY_KINDS, ENEMY_TYPES } from '../logic/enemies';
 
 const T = TILE_SIZE;
 const HALF = T / 2;
@@ -22,10 +22,14 @@ export class BootScene extends Phaser.Scene {
     this.paint(TEXTURES.stairsUp, T, T, (g) => paintStairs(g, true));
     this.paint(TEXTURES.player, T, T, paintPlayer);
     for (const kind of ENEMY_KINDS) {
-      this.paint(enemyTexture(kind), T, T, (g) => paintEnemy(g, ENEMY_COLOURS[kind]));
+      this.paint(enemyTexture(kind), T, T, (g) =>
+        paintEnemy(g, ENEMY_TYPES[kind].colour, kind === 'bat'),
+      );
     }
     this.paint(TEXTURES.chest, T, T, paintChest);
+    this.paint(TEXTURES.chestOpen, T, T, paintOpenChest);
     this.paint(TEXTURES.potion, T, T, paintPotion);
+    this.paint(TEXTURES.bolt, 12, 12, paintBolt);
 
     this.scene.start(SCENES.auth);
   }
@@ -85,8 +89,13 @@ function paintPlayer(g: Phaser.GameObjects.Graphics): void {
   g.lineStyle(1, 0x111111).strokeCircle(HALF, 15, 7);
 }
 
-function paintEnemy(g: Phaser.GameObjects.Graphics, colour: number): void {
+function paintEnemy(g: Phaser.GameObjects.Graphics, colour: number, winged: boolean): void {
   g.fillStyle(0x000000, 0.4).fillEllipse(HALF, T - 5, 18, 6);
+  if (winged) {
+    g.fillStyle(colour)
+      .fillTriangle(HALF - 6, 12, 1, 6, 3, 20)
+      .fillTriangle(HALF + 6, 12, T - 1, 6, T - 3, 20);
+  }
   g.fillStyle(colour).fillCircle(HALF, 15, 9);
   g.lineStyle(1, 0x0a0a0a).strokeCircle(HALF, 15, 9);
   g.fillStyle(0xff3b1f)
@@ -101,6 +110,22 @@ function paintChest(g: Phaser.GameObjects.Graphics): void {
     .fillRect(5, 13, T - 10, 2)
     .fillRect(HALF - 2, 13, 4, 6);
   g.lineStyle(1, 0x1a0f08).strokeRect(5, 8, T - 10, 18);
+}
+
+function paintOpenChest(g: Phaser.GameObjects.Graphics): void {
+  g.fillStyle(0x5a3a1e).fillRect(5, 14, T - 10, 12);
+  g.fillStyle(0x140c06).fillRect(7, 14, T - 14, 4); // empty interior
+  g.fillStyle(0x6e4826).fillRect(5, 4, T - 10, 6); // lid, flipped back
+  g.fillStyle(0xc9a55c).fillRect(5, 18, T - 10, 2);
+  g.lineStyle(1, 0x1a0f08)
+    .strokeRect(5, 14, T - 10, 12)
+    .strokeRect(5, 4, T - 10, 6);
+}
+
+/** White so each caster can tint its own bolts. */
+function paintBolt(g: Phaser.GameObjects.Graphics): void {
+  g.fillStyle(0xffffff, 0.3).fillCircle(6, 6, 6);
+  g.fillStyle(0xffffff, 1).fillCircle(6, 6, 3);
 }
 
 function paintPotion(g: Phaser.GameObjects.Graphics): void {

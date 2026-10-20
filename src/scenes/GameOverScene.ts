@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { logout } from '../api/auth';
+import { putSave } from '../api/saves';
 import { SCENES } from '../config';
-import { newSave } from '../logic/save';
+import { newSave, type SaveState } from '../logic/save';
 import type { GameSceneData } from './GameScene';
 
 export type Outcome = 'victory' | 'death';
@@ -43,14 +44,26 @@ export class GameOverScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    const nextRun = newSave();
+    if (this.outcome === 'death') void this.resetSave(nextRun);
+
     this.button(cx, cy + 50, 'Play again', () => {
-      this.scene.start(SCENES.game, { save: newSave() } satisfies GameSceneData);
+      this.scene.start(SCENES.game, { save: nextRun } satisfies GameSceneData);
     });
     this.button(cx, cy + 105, 'Log out', async () => {
       await logout();
       this.scene.start(SCENES.auth);
     });
     this.cameras.main.fadeIn(600, 0, 0, 0);
+  }
+
+  /** Death ends the run: the stored save goes back to floor 1, so logging in again starts over. */
+  private async resetSave(save: SaveState): Promise<void> {
+    try {
+      await putSave(save);
+    } catch (err) {
+      console.warn('Resetting the save after death failed', err);
+    }
   }
 
   private button(x: number, y: number, label: string, onClick: () => void | Promise<void>): void {
