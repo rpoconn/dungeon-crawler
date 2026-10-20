@@ -177,6 +177,7 @@ Swap generated textures for a CC0 tileset (candidate: 0x72 "DungeonTileset II" o
 - Full enemy state (hp, position) persisted in the save. Kills already are, as of Phase 4.
 - Leaderboard endpoint (fastest clear).
 - Music
+- A* path finding for enemies.  currently its simplistic chase angles.
 
 ---
 
