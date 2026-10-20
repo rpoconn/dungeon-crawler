@@ -178,6 +178,9 @@ Swap generated textures for a CC0 tileset (candidate: 0x72 "DungeonTileset II" o
 - Leaderboard endpoint (fastest clear).
 - Music
 - A* path finding for enemies.  currently its simplistic chase angles.
+- sound effects
+- server side testing
+- cleanup large "logic" directory to be more structured via functionality.
 
 ---
 
