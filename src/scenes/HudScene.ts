@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { logout } from '../api/auth';
-import { putSave } from '../api/saves';
 import { getSession } from '../api/session';
 import { GAME_EVENTS, MAX_LEVEL, SCENES } from '../config';
 import { HealthBar } from '../ui/HealthBar';
@@ -158,11 +157,7 @@ export class HudScene extends Phaser.Scene {
     this.layout();
 
     const game = this.scene.get(SCENES.game) as GameScene;
-    try {
-      await putSave(game.snapshot());
-    } catch (err) {
-      console.warn('Save on logout failed', err);
-    }
+    await game.saveAndStop();
     await logout();
 
     this.scene.stop(SCENES.game);

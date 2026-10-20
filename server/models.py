@@ -21,4 +21,7 @@ class SaveState(BaseModel):
     weaponId: str
     x: int
     y: int
+    # Spawn-plan indices on the current floor. Defaults keep pre-Phase-4 saves loadable.
+    openedChests: list[int] = Field(default_factory=list, max_length=50)
+    slain: list[int] = Field(default_factory=list, max_length=200)
     completed: bool = False

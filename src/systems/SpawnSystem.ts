@@ -16,6 +16,9 @@ export class SpawnSystem implements EnemyWorld {
   readonly projectiles: Phaser.Physics.Arcade.Group;
   private field: number[][] = [];
   private fieldKey = '';
+  /** Enemies from the floor's spawn plan, by plan index. Summons are not in here. */
+  private readonly planned = new Map<number, Enemy>();
+  private slainBefore: readonly number[] = [];
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -27,8 +30,18 @@ export class SpawnSystem implements EnemyWorld {
     this.projectiles = scene.physics.add.group();
   }
 
-  spawnAll(spawns: readonly EnemySpawn[]): void {
-    for (const { kind, tile } of spawns) this.spawn(kind, tile);
+  /** Spawns the floor's planned enemies, minus those `slain` before the save was made. */
+  spawnAll(spawns: readonly EnemySpawn[], slain: readonly number[]): void {
+    this.slainBefore = slain;
+    spawns.forEach(({ kind, tile }, i) => {
+      if (!slain.includes(i)) this.planned.set(i, this.spawn(kind, tile));
+    });
+  }
+
+  /** Plan indices of every planned enemy now dead, for the save. */
+  slain(): number[] {
+    const fresh = [...this.planned].filter(([, enemy]) => !enemy.alive).map(([i]) => i);
+    return [...this.slainBefore, ...fresh].sort((a, b) => a - b);
   }
 
   spawn(kind: EnemyKind, tile: Point): Enemy {

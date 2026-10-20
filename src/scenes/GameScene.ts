@@ -4,13 +4,14 @@ import { PLAYER_EVENTS, Player } from '../entities/Player';
 import { toWorld } from '../logic/coords';
 import { TILE, generateFloor, isFloor, tileAt, type Floor, type Point } from '../logic/dungeon';
 import { seededRng } from '../logic/random';
-import { NO_POSITION, type SaveState } from '../logic/save';
+import { NO_POSITION, newSave, type SaveState } from '../logic/save';
 import { planSpawns } from '../logic/spawns';
 import { getWeapon } from '../logic/weapons';
 import { CombatSystem } from '../systems/CombatSystem';
 import { FloorSystem } from '../systems/FloorSystem';
 import { LightingSystem, lightUp } from '../systems/LightingSystem';
 import { PickupSystem } from '../systems/PickupSystem';
+import { SaveSystem } from '../systems/SaveSystem';
 import { SpawnSystem } from '../systems/SpawnSystem';
 import type { GameOverData } from './GameOverScene';
 import type { HudSceneData } from './HudScene';
@@ -28,6 +29,9 @@ export class GameScene extends Phaser.Scene {
   private state!: SaveState;
   private floor!: Floor;
   private player!: Player;
+  private spawns!: SpawnSystem;
+  private pickups!: PickupSystem;
+  private saves!: SaveSystem;
 
   constructor() {
     super(SCENES.game);
@@ -38,7 +42,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { seed, level, hp, maxHp, weaponId } = this.state;
+    const { seed, level, hp, maxHp, weaponId, openedChests, slain } = this.state;
     this.floor = generateFloor(seed, level);
     const { width, height, entrance, exit } = this.floor;
     const worldW = width * TILE_SIZE;
@@ -61,10 +65,13 @@ export class GameScene extends Phaser.Scene {
 
     const plan = planSpawns(this.floor, level, rng);
     const spawns = new SpawnSystem(this, this.floor, level, this.player);
-    spawns.spawnAll(plan.enemies);
-    const pickups = new PickupSystem(this, this.player, plan.chests, level, rng);
+    spawns.spawnAll(plan.enemies, slain);
+    const pickups = new PickupSystem(this, this.player, plan.chests, openedChests, level, rng);
+    this.spawns = spawns;
+    this.pickups = pickups;
     new CombatSystem(this, this.player, spawns, layer, rng, (enemy) => pickups.dropFor(enemy));
-    new FloorSystem(this, this.player, stairsDown, () => this.snapshot());
+    this.saves = new SaveSystem(this, () => this.snapshot());
+    new FloorSystem(this, this.player, stairsDown, () => this.snapshot(), this.saves);
     this.player.once(PLAYER_EVENTS.died, () => this.die());
 
     const camera = this.cameras.main;
@@ -78,18 +85,32 @@ export class GameScene extends Phaser.Scene {
 
   /** Current run state, for saving. */
   snapshot(): SaveState {
-    const x = Math.floor(this.player.x / TILE_SIZE);
-    const y = Math.floor(this.player.y / TILE_SIZE);
-    return { ...this.state, x, y, hp: this.player.hp, weaponId: this.player.weapon.id };
+    return {
+      ...this.state,
+      x: Math.floor(this.player.x / TILE_SIZE),
+      y: Math.floor(this.player.y / TILE_SIZE),
+      hp: this.player.hp,
+      weaponId: this.player.weapon.id,
+      openedChests: this.pickups.openedChests(),
+      slain: this.spawns.slain(),
+    };
   }
 
+  /** Saves the run as it stands and stops autosaving, for logout. */
+  saveAndStop(): Promise<void> {
+    return this.saves.commit();
+  }
+
+  /** Death ends the run: a fresh floor-1 run is stored at once, so logging in again starts over. */
   private die(): void {
+    const nextRun = newSave();
+    void this.saves.commit(nextRun);
     const camera = this.cameras.main;
     this.physics.pause();
     camera.shake(250, 0.01);
     camera.fadeOut(DEATH_FADE_MS, 40, 0, 0);
     camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-      this.scene.start(SCENES.gameOver, { outcome: 'death' } satisfies GameOverData);
+      this.scene.start(SCENES.gameOver, { outcome: 'death', nextRun } satisfies GameOverData);
     });
   }
 

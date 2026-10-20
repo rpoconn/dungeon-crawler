@@ -22,10 +22,15 @@ export class PickupSystem {
     private readonly scene: Phaser.Scene,
     private readonly player: Player,
     chestTiles: readonly Point[],
+    openedChests: readonly number[],
     private readonly level: number,
     private readonly rng: Rng,
   ) {
-    this.chests = chestTiles.map((tile) => new Chest(scene, ...toWorld(tile)));
+    this.chests = chestTiles.map((tile, i) => {
+      const chest = new Chest(scene, ...toWorld(tile));
+      if (openedChests.includes(i)) chest.open();
+      return chest;
+    });
     scene.physics.add.collider(player, this.chests);
 
     this.potions = scene.physics.add.staticGroup();
@@ -38,6 +43,11 @@ export class PickupSystem {
     scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
       scene.events.off(Phaser.Scenes.Events.UPDATE, this.update, this),
     );
+  }
+
+  /** Plan indices of the opened chests, for the save. */
+  openedChests(): number[] {
+    return this.chests.flatMap((chest, i) => (chest.opened ? [i] : []));
   }
 
   /** Maybe leave a potion where an enemy fell; likelier when the player is low. */

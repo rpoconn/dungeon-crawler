@@ -12,7 +12,17 @@ export class ApiError extends Error {
   }
 }
 
-export async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+export interface RequestOptions {
+  /** Lets the request outlive the page (e.g. a save sent from `beforeunload`). */
+  keepalive?: boolean;
+}
+
+export async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  { keepalive = false }: RequestOptions = {},
+): Promise<T> {
   const headers: Record<string, string> = {};
   const token = getToken();
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -24,6 +34,7 @@ export async function request<T>(method: string, path: string, body?: unknown): 
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      keepalive,
     });
   } catch {
     throw new ApiError(0, `Can't reach the server at ${API_BASE}. Is it running?`);

@@ -5,6 +5,7 @@ import { loadSave } from '../api/saves';
 import { clearSession, getSession } from '../api/session';
 import { SCENES } from '../config';
 import { newSave } from '../logic/save';
+import type { GameOverData } from './GameOverScene';
 import type { GameSceneData } from './GameScene';
 import './AuthScene.css';
 
@@ -108,9 +109,15 @@ export class AuthScene extends Phaser.Scene {
     await this.attempt(() => this.enterGame(), 'Resuming…', clearSession);
   }
 
+  /** Resumes the saved run; a completed one gets the victory screen and a "play again" offer. */
   private async enterGame(): Promise<void> {
-    const save = (await loadSave()) ?? newSave();
-    this.scene.start(SCENES.game, { save } satisfies GameSceneData);
+    const save = await loadSave();
+    if (save?.completed) {
+      const data: GameOverData = { outcome: 'victory', nextRun: newSave(), returning: true };
+      this.scene.start(SCENES.gameOver, data);
+      return;
+    }
+    this.scene.start(SCENES.game, { save: save ?? newSave() } satisfies GameSceneData);
   }
 
   /** Runs an API action with the form locked; on failure, shows the error and unlocks. */
