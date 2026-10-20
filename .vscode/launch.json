@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Start UI",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Start Backend",
+      "type": "debugpy",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/server",
+      "python": "${workspaceFolder}/server/.venv/Scripts/python.exe",
+      "module": "uvicorn",
+      "args": ["main:app", "--reload", "--host", "127.0.0.1", "--port", "8000"],
+      "console": "integratedTerminal",
+      "justMyCode": true
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Start Both",
+      "configurations": ["Start Backend", "Start UI"],
+      "stopAll": true
+    }
+  ]
+}
