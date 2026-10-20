@@ -22,9 +22,16 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS saves (
     user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     state   TEXT NOT NULL,
-    updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    writer  TEXT,
+    seq     INTEGER
 );
 """
+
+# Columns added after the first release, for databases created before them.
+MIGRATIONS = {
+    "saves": {"writer": "TEXT", "seq": "INTEGER"},
+}
 
 
 def connect() -> sqlite3.Connection:
@@ -38,6 +45,11 @@ def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with connect() as conn:
         conn.executescript(SCHEMA)
+        for table, columns in MIGRATIONS.items():
+            existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+            for name, sql_type in columns.items():
+                if name not in existing:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {sql_type}")
 
 
 def get_db() -> Iterator[sqlite3.Connection]:

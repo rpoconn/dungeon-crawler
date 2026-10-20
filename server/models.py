@@ -16,7 +16,8 @@ class TokenResponse(BaseModel):
 class SaveState(BaseModel):
     level: int = Field(ge=1, le=10)
     seed: int
-    hp: int = Field(ge=0)
+    # A run stored at 0 hp could never be played; death stores a fresh run instead.
+    hp: int = Field(gt=0)
     maxHp: int = Field(gt=0)
     weaponId: str
     x: int

@@ -17,12 +17,18 @@ bearer = HTTPBearer(auto_error=False)
 
 Db = Annotated[sqlite3.Connection, Depends(get_db)]
 
+SESSION_DAYS = 30
+# SQLite datetime() modifier: sessions created before this cutoff have expired.
+SESSION_CUTOFF = f"-{SESSION_DAYS} days"
+
 
 def hash_password(password: str, salt: bytes) -> bytes:
     return hashlib.scrypt(password.encode(), salt=salt, n=2**14, r=8, p=1)
 
 
 def new_session(db: sqlite3.Connection, user_id: int) -> str:
+    """Issues a token, and clears out expired ones while we are here."""
+    db.execute("DELETE FROM sessions WHERE created <= datetime('now', ?)", (SESSION_CUTOFF,))
     token = secrets.token_urlsafe(32)
     db.execute("INSERT INTO sessions (token, user_id) VALUES (?, ?)", (token, user_id))
     return token
@@ -58,10 +64,11 @@ def current_user(
     db: Db,
     auth: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
 ) -> int:
-    """Resolve the bearer token to a user id, or 401."""
+    """Resolve an unexpired bearer token to a user id, or 401."""
     if auth is not None:
         row = db.execute(
-            "SELECT user_id FROM sessions WHERE token = ?", (auth.credentials,)
+            "SELECT user_id FROM sessions WHERE token = ? AND created > datetime('now', ?)",
+            (auth.credentials, SESSION_CUTOFF),
         ).fetchone()
         if row is not None:
             return row["user_id"]

@@ -1,5 +1,6 @@
 /** Save blob shape (mirrors server/models.py SaveState) and the transitions between runs and floors. */
 
+import { isDead } from './combat';
 import { STARTING_WEAPON } from './weapons';
 
 export interface SaveState {
@@ -39,6 +40,11 @@ export function newSave(seed = randomSeed()): SaveState {
         slain: [],
         completed: false,
     };
+}
+
+/** The run to resume: a fresh one if there is none, or if it was stored at 0 hp (unplayable). */
+export function resumeOrNew(save: SaveState | null): SaveState {
+    return save && !isDead(save.hp) ? save : newSave();
 }
 
 /** The run as it stands on arrival at the next floor: spawn at its entrance, fully populated. */

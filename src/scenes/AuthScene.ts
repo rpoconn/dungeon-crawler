@@ -4,7 +4,7 @@ import { ApiError } from '../api/client';
 import { loadSave } from '../api/saves';
 import { clearSession, getSession } from '../api/session';
 import { SCENES } from '../config';
-import { newSave } from '../logic/save';
+import { newSave, resumeOrNew } from '../logic/save';
 import type { GameOverData } from './GameOverScene';
 import type { GameSceneData } from './GameScene';
 import './AuthScene.css';
@@ -118,7 +118,7 @@ export class AuthScene extends Phaser.Scene {
             this.scene.start(SCENES.gameOver, data);
             return;
         }
-        this.scene.start(SCENES.game, { save: save ?? newSave() } satisfies GameSceneData);
+        this.scene.start(SCENES.game, { save: resumeOrNew(save) } satisfies GameSceneData);
     }
 
     /** Runs an API action with the form locked; on failure, shows the error and unlocks. */

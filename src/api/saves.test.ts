@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { newSave } from '../logic/save';
-import { flushSaves, putSave } from './saves';
+import { flushSaves, putSave, putSaveOnUnload } from './saves';
 
 /** A fetch stub whose responses resolve only when the test says so. */
 function controlledFetch(): { calls: number[]; release: () => void } {
@@ -48,5 +48,28 @@ describe('putSave', () => {
         await flushSaves();
         expect(fetch).toHaveBeenCalledOnce();
         warn.mockRestore();
+    });
+});
+
+describe('write ordering headers', () => {
+    function headersOf(call: unknown[]): Record<string, string> {
+        const init = call[1] as RequestInit;
+        return init.headers as Record<string, string>;
+    }
+
+    it('numbers writes in the order they were made, unload save last, from one writer', async () => {
+        const { release } = controlledFetch();
+        const queued = putSave(newSave(1));
+        await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+        // The tab closes while the autosave is still in flight.
+        const unload = putSaveOnUnload(newSave(2));
+        release();
+        release();
+        await Promise.all([queued, unload]);
+
+        const [autosave, onUnload] = vi.mocked(fetch).mock.calls.map(headersOf);
+        expect(autosave?.['X-Save-Writer']).toBeTruthy();
+        expect(onUnload?.['X-Save-Writer']).toBe(autosave?.['X-Save-Writer']);
+        expect(Number(onUnload?.['X-Save-Seq'])).toBeGreaterThan(Number(autosave?.['X-Save-Seq']));
     });
 });

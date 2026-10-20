@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { putSave, putSaveOnUnload } from '../api/saves';
+import { flushSaves, putSave, putSaveOnUnload } from '../api/saves';
 import type { SaveState } from '../logic/save';
 
 const AUTOSAVE_MS = 10_000;
@@ -31,9 +31,14 @@ export class SaveSystem {
         if (!this.committed) await putSave(this.snapshot());
     }
 
-    /** Final save for this floor. Resolves once it (and anything queued before it) has landed. */
-    async commit(state: SaveState = this.snapshot()): Promise<void> {
+    /**
+     * Final save for this floor. Resolves once it (and anything queued before it) has landed. Only
+     * the first call stores anything, so e.g. logging out during the death fade can't replace the
+     * fresh run with the dead one; later calls just wait for the first to land.
+     */
+    async commit(state?: SaveState): Promise<void> {
+        if (this.committed) return flushSaves();
         this.committed = true;
-        await putSave(state);
+        await putSave(state ?? this.snapshot());
     }
 }

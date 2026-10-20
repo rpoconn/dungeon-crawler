@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { MAX_LEVEL, SCENES } from '../config';
+import type { Player } from '../entities/Player';
 import { complete, descend, newSave, type SaveState } from '../logic/save';
 import type { GameOverData } from '../scenes/GameOverScene';
 import type { GameSceneData } from '../scenes/GameScene';
@@ -16,7 +17,7 @@ export class FloorSystem {
 
     constructor(
         private readonly scene: Phaser.Scene,
-        player: Phaser.Types.Physics.Arcade.ArcadeColliderType,
+        private readonly player: Player,
         exit: Phaser.Types.Physics.Arcade.ArcadeColliderType,
         private readonly snapshot: () => SaveState,
         private readonly saves: SaveSystem,
@@ -25,7 +26,8 @@ export class FloorSystem {
     }
 
     private leave(): void {
-        if (this.leaving) return;
+        // Dying on the stairs (same physics step) is a death, not a descent.
+        if (this.leaving || this.player.dead) return;
         this.leaving = true;
 
         const state = this.snapshot();

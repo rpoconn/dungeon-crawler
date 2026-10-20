@@ -15,15 +15,17 @@ export class ApiError extends Error {
 export interface RequestOptions {
     /** Lets the request outlive the page (e.g. a save sent from `beforeunload`). */
     keepalive?: boolean;
+    /** Extra request headers. */
+    headers?: Record<string, string>;
 }
 
 export async function request<T>(
     method: string,
     path: string,
     body?: unknown,
-    { keepalive = false }: RequestOptions = {},
+    { keepalive = false, headers: extraHeaders = {} }: RequestOptions = {},
 ): Promise<T> {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { ...extraHeaders };
     const token = getToken();
     if (token) headers.Authorization = `Bearer ${token}`;
     if (body !== undefined) headers['Content-Type'] = 'application/json';

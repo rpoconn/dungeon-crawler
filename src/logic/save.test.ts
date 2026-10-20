@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NO_POSITION, complete, descend, newSave } from './save';
+import { NO_POSITION, START_HP, complete, descend, newSave, resumeOrNew } from './save';
 
 describe('newSave', () => {
     it('starts on floor 1 at full health with no saved position or floor progress', () => {
@@ -29,6 +29,21 @@ describe('descend', () => {
     it('forgets the previous floor’s opened chests and kills', () => {
         const save = { ...newSave(7), openedChests: [0], slain: [1, 4] };
         expect(descend(save)).toMatchObject({ openedChests: [], slain: [] });
+    });
+});
+
+describe('resumeOrNew', () => {
+    it('resumes a live run as is', () => {
+        const save = { ...newSave(7), level: 4, hp: 1 };
+        expect(resumeOrNew(save)).toBe(save);
+    });
+
+    it('starts a fresh run when there is no save, or it was stored at 0 hp', () => {
+        expect(resumeOrNew(null)).toMatchObject({ level: 1, hp: START_HP });
+        expect(resumeOrNew({ ...newSave(7), level: 4, hp: 0 })).toMatchObject({
+            level: 1,
+            hp: START_HP,
+        });
     });
 });
 
