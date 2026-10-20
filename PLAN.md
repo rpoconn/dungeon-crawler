@@ -8,17 +8,17 @@ Hard budget: **120 minutes**. Each phase has a time box and a cut line. If a pha
 
 ## Architecture decisions (made up front, not revisited)
 
-| Decision | Choice | Why |
-|---|---|---|
-| Engine | Phaser 3.90 (already installed) | Arcade physics, sprites, scenes, input, tweens out of the box. Real-time is the default. |
-| Map gen | rot-js `Map.Digger` with seeded `RNG` | Rooms + corridors, guaranteed connected. Seeding lets a save store only the seed, not the map. |
-| Backend | FastAPI + SQLite via `sqlite3` stdlib, run with `uv` | Zero config, one-file DB, Swagger UI for free. |
-| Auth | Username + password, `hashlib.scrypt` hash, opaque session token in `Authorization: Bearer` | No third-party auth deps, no JWT lib. Tokens live in a `sessions` table. |
-| Save model | One JSON blob per user: `{ level, seed, hp, maxHp, weaponId, x, y, openedChests, slain, completed }` | Resume = regenerate floor from seed, place player at saved tile. Spawns are seeded, so opened chests and killed enemies are stored as spawn-plan indices (added in Phase 4). |
-| Save cadence | On floor change, on death, on logout, and every 10s while playing | Cheap; the blob is tiny. |
-| Art | Phases 1–5 use procedurally generated textures (Phaser `Graphics` → `generateTexture`). Phase 6 swaps in a CC0 tileset if time allows. | Guarantees a playable game with zero asset-pipeline risk. |
-| Isometric | Not attempted unless Phases 0–6 are done with >15 min left | Explicitly deprioritized by the spec ("if time"). |
-| Hosting | One Docker image: FastAPI serves the built UI and the API from one origin. Render Blueprint for deploys. | Added after Phase 3 (see "Docker + hosting" below). No CORS in production. |
+| Decision     | Choice                                                                                                                                 | Why                                                                                                                                                                          |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Engine       | Phaser 3.90 (already installed)                                                                                                        | Arcade physics, sprites, scenes, input, tweens out of the box. Real-time is the default.                                                                                     |
+| Map gen      | rot-js `Map.Digger` with seeded `RNG`                                                                                                  | Rooms + corridors, guaranteed connected. Seeding lets a save store only the seed, not the map.                                                                               |
+| Backend      | FastAPI + SQLite via `sqlite3` stdlib, run with `uv`                                                                                   | Zero config, one-file DB, Swagger UI for free.                                                                                                                               |
+| Auth         | Username + password, `hashlib.scrypt` hash, opaque session token in `Authorization: Bearer`                                            | No third-party auth deps, no JWT lib. Tokens live in a `sessions` table.                                                                                                     |
+| Save model   | One JSON blob per user: `{ level, seed, hp, maxHp, weaponId, x, y, openedChests, slain, completed }`                                   | Resume = regenerate floor from seed, place player at saved tile. Spawns are seeded, so opened chests and killed enemies are stored as spawn-plan indices (added in Phase 4). |
+| Save cadence | On floor change, on death, on logout, and every 10s while playing                                                                      | Cheap; the blob is tiny.                                                                                                                                                     |
+| Art          | Phases 1–5 use procedurally generated textures (Phaser `Graphics` → `generateTexture`). Phase 6 swaps in a CC0 tileset if time allows. | Guarantees a playable game with zero asset-pipeline risk.                                                                                                                    |
+| Isometric    | Not attempted unless Phases 0–6 are done with >15 min left                                                                             | Explicitly deprioritized by the spec ("if time").                                                                                                                            |
+| Hosting      | One Docker image: FastAPI serves the built UI and the API from one origin. Render Blueprint for deploys.                               | Added after Phase 3 (see "Docker + hosting" below). No CORS in production.                                                                                                   |
 
 ## Code layout
 
@@ -114,14 +114,14 @@ Goal: real-time fights that can kill you, with 6 distinct enemy kinds.
 
 1. `logic/enemies.ts` table. Stats scale with floor number.
 
-   | Kind | Behaviour | Notes |
-   |---|---|---|
-   | Skeleton | chase | baseline |
-   | Zombie | chase, slow, high hp | tank |
-   | Bat | erratic wander, fast, low hp | swarm |
-   | Cultist | ranged, keeps distance | fires projectiles |
-   | Ghoul | chase, lunges when close | burst damage |
-   | Lich | ranged, summons bats on hit | floors 7+ only |
+    | Kind     | Behaviour                    | Notes             |
+    | -------- | ---------------------------- | ----------------- |
+    | Skeleton | chase                        | baseline          |
+    | Zombie   | chase, slow, high hp         | tank              |
+    | Bat      | erratic wander, fast, low hp | swarm             |
+    | Cultist  | ranged, keeps distance       | fires projectiles |
+    | Ghoul    | chase, lunges when close     | burst damage      |
+    | Lich     | ranged, summons bats on hit  | floors 7+ only    |
 
 2. `Enemy.ts` reads the behaviour tag and runs a small state machine in `preUpdate`.
 3. `Player.ts`: attack on Space or click, swing hitbox in facing direction, 300ms cooldown, brief invulnerability after being hit.
@@ -182,32 +182,32 @@ Swap generated textures for a CC0 tileset (candidate: 0x72 "DungeonTileset II" o
 
 ## Timeline
 
-| Phase | Minutes | Cumulative |
-|---|---|---|
-| 0 Backend | 15 | 15 |
-| 1 Auth client | 15 | 30 |
-| 2 Dungeon + movement | 20 | 50 |
-| 3 Combat | 30 | 80 |
-| 4 Persistence | 15 | 95 |
-| 5 Polish / QA | 15 | 110 |
-| 6 Art | 10 | 120 |
+| Phase                | Minutes | Cumulative |
+| -------------------- | ------- | ---------- |
+| 0 Backend            | 15      | 15         |
+| 1 Auth client        | 15      | 30         |
+| 2 Dungeon + movement | 20      | 50         |
+| 3 Combat             | 30      | 80         |
+| 4 Persistence        | 15      | 95         |
+| 5 Polish / QA        | 15      | 110        |
+| 6 Art                | 10      | 120        |
 
 ## Spec coverage
 
-| Requirement | Where |
-|---|---|
-| Overhead 2D, real-time | Phaser arcade physics, Phases 2–3 |
-| Random dungeon, always an entrance and exit | `logic/dungeon.ts` + unit test, Phase 2 |
-| 10 levels, finish on the last | `FloorSystem`, `config.ts` |
-| Login / account creation, one account per player | FastAPI `auth.py`, `AuthScene` |
-| Health bar | `HudScene` |
-| 6 enemy kinds | `logic/enemies.ts` |
-| Weapons in chests | `Chest.ts`, `logic/weapons.ts` |
-| Health drops when low | `logic/loot.ts` |
-| Resume where you left off | `SaveSystem`, Phase 4 |
-| Logout button | `HudScene` |
-| Easy-to-navigate code | one concern per file, `logic/` is Phaser-free |
-| Diablo aesthetic | dark palette, vignette, torchlight, 0x72 CC0 tileset (Phase 6) |
+| Requirement                                      | Where                                                          |
+| ------------------------------------------------ | -------------------------------------------------------------- |
+| Overhead 2D, real-time                           | Phaser arcade physics, Phases 2–3                              |
+| Random dungeon, always an entrance and exit      | `logic/dungeon.ts` + unit test, Phase 2                        |
+| 10 levels, finish on the last                    | `FloorSystem`, `config.ts`                                     |
+| Login / account creation, one account per player | FastAPI `auth.py`, `AuthScene`                                 |
+| Health bar                                       | `HudScene`                                                     |
+| 6 enemy kinds                                    | `logic/enemies.ts`                                             |
+| Weapons in chests                                | `Chest.ts`, `logic/weapons.ts`                                 |
+| Health drops when low                            | `logic/loot.ts`                                                |
+| Resume where you left off                        | `SaveSystem`, Phase 4                                          |
+| Logout button                                    | `HudScene`                                                     |
+| Easy-to-navigate code                            | one concern per file, `logic/` is Phaser-free                  |
+| Diablo aesthetic                                 | dark palette, vignette, torchlight, 0x72 CC0 tileset (Phase 6) |
 
 ## How to run
 

@@ -6,34 +6,34 @@ import { request } from './client';
 let queue: Promise<void> = Promise.resolve();
 
 export function loadSave(): Promise<SaveState | null> {
-  return request<SaveState | null>('GET', '/save');
+    return request<SaveState | null>('GET', '/save');
 }
 
 /** Queues a write and resolves once it (and every earlier one) has settled. Failures are logged, not thrown. */
 export function putSave(state: SaveState): Promise<void> {
-  queue = writeAfter(queue, state);
-  return queue;
+    queue = writeAfter(queue, state);
+    return queue;
 }
 
 /** Resolves once every queued write has settled. */
 export function flushSaves(): Promise<void> {
-  return queue;
+    return queue;
 }
 
 /** For `beforeunload`: skips the queue, since the page will not wait for it. */
 export async function putSaveOnUnload(state: SaveState): Promise<void> {
-  try {
-    await request<SaveState>('PUT', '/save', state, { keepalive: true });
-  } catch (err) {
-    console.warn('Save on unload failed', err);
-  }
+    try {
+        await request<SaveState>('PUT', '/save', state, { keepalive: true });
+    } catch (err) {
+        console.warn('Save on unload failed', err);
+    }
 }
 
 async function writeAfter(previous: Promise<void>, state: SaveState): Promise<void> {
-  await previous;
-  try {
-    await request<SaveState>('PUT', '/save', state);
-  } catch (err) {
-    console.warn('Save failed', err);
-  }
+    await previous;
+    try {
+        await request<SaveState>('PUT', '/save', state);
+    } catch (err) {
+        console.warn('Save failed', err);
+    }
 }

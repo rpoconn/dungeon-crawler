@@ -2,12 +2,12 @@
 # The SQLite DB lives on the container filesystem and resets on every deploy.
 # To keep data, add a disk (paid plan) mounted at /data and set DATABASE_PATH=/data/game.db.
 services:
-  - type: web
-    name: dungeon-crawler
-    runtime: docker
-    plan: free
-    dockerfilePath: ./Dockerfile
-    healthCheckPath: /health
-    envVars:
-      - key: DATABASE_PATH
-        value: /app/server/game.db
+    - type: web
+      name: dungeon-crawler
+      runtime: docker
+      plan: free
+      dockerfilePath: ./Dockerfile
+      healthCheckPath: /health
+      envVars:
+          - key: DATABASE_PATH
+            value: /app/server/game.db

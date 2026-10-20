@@ -12,15 +12,15 @@ const SCONCE_CHANCE = 0.75;
  * tiles in the wall row) are skipped.
  */
 export function planSconces(floor: Floor, rng: Rng): Point[] {
-  const out: Point[] = [];
-  for (const room of floor.rooms) {
-    if (out.length >= MAX_SCONCES) break;
-    const y = room.top - 1;
-    const spots: Point[] = [];
-    for (let x = room.left; x <= room.right; x++) {
-      if (tileAt(floor, x, y) === TILE.wall) spots.push({ x, y });
+    const out: Point[] = [];
+    for (const room of floor.rooms) {
+        if (out.length >= MAX_SCONCES) break;
+        const y = room.top - 1;
+        const spots: Point[] = [];
+        for (let x = room.left; x <= room.right; x++) {
+            if (tileAt(floor, x, y) === TILE.wall) spots.push({ x, y });
+        }
+        if (spots.length > 0 && chance(rng, SCONCE_CHANCE)) out.push(pick(rng, spots));
     }
-    if (spots.length > 0 && chance(rng, SCONCE_CHANCE)) out.push(pick(rng, spots));
-  }
-  return out;
+    return out;
 }
