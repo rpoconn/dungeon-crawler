@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TILE, distancesFrom, type Floor, type Tile } from './dungeon';
-import { hasLineOfSight, stepToward } from './pathing';
+import { TILE, type Floor, type Tile } from './dungeon';
+import { findPath, hasLineOfSight } from './pathing';
 
 /** `#` wall, `.` floor. */
 function floorFrom(rows: string[]): Floor {
@@ -23,32 +23,42 @@ const L_SHAPE = floorFrom([
     '#######',
 ]);
 
-describe('stepToward', () => {
-    it('follows corridors around corners toward the origin', () => {
-        const dist = distancesFrom(L_SHAPE, { x: 1, y: 1 });
-        expect(stepToward(dist, { x: 5, y: 3 })).toEqual({ x: 5, y: 2 });
-        expect(stepToward(dist, { x: 5, y: 2 })).toEqual({ x: 5, y: 1 });
-        expect(stepToward(dist, { x: 5, y: 1 })).toEqual({ x: 4, y: 1 });
-    });
-
-    it('returns null at the origin or off the field', () => {
-        const dist = distancesFrom(L_SHAPE, { x: 1, y: 1 });
-        expect(stepToward(dist, { x: 1, y: 1 })).toBeNull();
-        expect(stepToward(dist, { x: 0, y: 0 })).toBeNull();
+describe('findPath', () => {
+    it('follows corridors around corners to the target', () => {
+        expect(findPath(L_SHAPE, { x: 5, y: 3 }, { x: 1, y: 1 })).toEqual([
+            { x: 5, y: 2 },
+            { x: 5, y: 1 },
+            { x: 4, y: 1 },
+            { x: 3, y: 1 },
+            { x: 2, y: 1 },
+            { x: 1, y: 1 },
+        ]);
     });
 
     it('cuts diagonals across open rooms but not around wall corners', () => {
         const room = floorFrom(['#####', '#...#', '#...#', '#...#', '#####']);
-        expect(stepToward(distancesFrom(room, { x: 1, y: 1 }), { x: 3, y: 3 })).toEqual({
-            x: 2,
-            y: 2,
-        });
+        expect(findPath(room, { x: 3, y: 3 }, { x: 1, y: 1 })).toEqual([
+            { x: 2, y: 2 },
+            { x: 1, y: 1 },
+        ]);
 
         const corner = floorFrom(['####', '#..#', '##.#', '####']);
-        expect(stepToward(distancesFrom(corner, { x: 1, y: 1 }), { x: 2, y: 2 })).toEqual({
-            x: 2,
-            y: 1,
-        });
+        expect(findPath(corner, { x: 2, y: 2 }, { x: 1, y: 1 })).toEqual([
+            { x: 2, y: 1 },
+            { x: 1, y: 1 },
+        ]);
+    });
+
+    it('is empty on the target and null when the target is out of reach', () => {
+        expect(findPath(L_SHAPE, { x: 1, y: 1 }, { x: 1, y: 1 })).toEqual([]);
+        expect(findPath(L_SHAPE, { x: 1, y: 1 }, { x: 0, y: 0 })).toBeNull();
+
+        const split = floorFrom(['#####', '#.#.#', '#####']);
+        expect(findPath(split, { x: 1, y: 1 }, { x: 3, y: 1 })).toBeNull();
+    });
+
+    it('gives up on routes that cost more than the cap', () => {
+        expect(findPath(L_SHAPE, { x: 5, y: 3 }, { x: 1, y: 1 }, 5)).toBeNull();
     });
 });
 

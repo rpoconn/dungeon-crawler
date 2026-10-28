@@ -177,7 +177,7 @@ Swap generated textures for a CC0 tileset (candidate: 0x72 "DungeonTileset II" o
 - Full enemy state (hp, position) persisted in the save. Kills already are, as of Phase 4.
 - Leaderboard endpoint (fastest clear).
 - Music
-- A* path finding for enemies.  currently its simplistic chase angles.
+- ✅ A* path finding for enemies. `findPath` in `logic/pathing.ts` (8-way, octile costs, no wall-corner cutting, capped at cost 40). Each enemy keeps its own route to the player's tile, rebuilt when the player changes tile or the enemy is knocked off it. Waypoints are skipped once the next one is in clear reach for the whole body width, so paths come out smooth instead of hopping tile centre to tile centre. The BFS field still drives aggro and leash.
 - sound effects
 - server side testing
 - cleanup large "logic" directory to be more structured via functionality.

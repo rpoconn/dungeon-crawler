@@ -2,9 +2,9 @@ import Phaser from 'phaser';
 import { TEXTURES, TILE_SIZE, enemyTexture } from '../config';
 import { applyDamage, isDead } from '../logic/combat';
 import { toTile, toTileSpace, toWorld } from '../logic/coords';
-import type { Floor } from '../logic/dungeon';
+import type { Floor, Point } from '../logic/dungeon';
 import { LUNGE, SUMMON, type EnemyStats } from '../logic/enemies';
-import { hasLineOfSight, stepToward } from '../logic/pathing';
+import { findPath, hasLineOfSight } from '../logic/pathing';
 import { lightUp } from '../systems/LightingSystem';
 import { BEHAVIOURS } from './behaviours';
 import { playMotion } from './motion';
@@ -16,6 +16,8 @@ const AGGRO_STEPS = 10;
 const LEASH_STEPS = 18;
 /** Within this range and in sight, heads straight for the player instead of following the path. */
 const DIRECT_RANGE = 4 * TILE_SIZE;
+/** A waypoint counts as reached within this many pixels of its tile centre. */
+const WAYPOINT_REACHED = 4;
 const BODY_RADIUS = 9;
 const KNOCKBACK = { speed: 200, ms: 130 } as const;
 const FLASH_MS = 80;
@@ -45,6 +47,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     modeUntil = 0;
     /** Bats called by a lich; they count against its summon cap. */
     summoned = false;
+    /** Remaining A* waypoints to the player, and the player tile they lead to. */
+    private path: Point[] = [];
+    private pathGoal = '';
     private stunnedUntil = 0;
     private lastSummonAt = -Infinity;
     private dying = false;
@@ -145,6 +150,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     setMode(mode: EnemyMode, timer = this.timer): void {
         this.mode = mode;
         this.timer = timer;
+        if (mode === 'idle') this.path = [];
         this.clearTint();
     }
 
@@ -167,10 +173,61 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     chaseAngle(): number {
         if (this.distanceToPlayer() < DIRECT_RANGE && this.canSeePlayer())
             return this.angleToPlayer();
-        const next = stepToward(this.world.pathField(), toTile(this.x, this.y));
+        const next = this.nextWaypoint();
         if (!next) return this.angleToPlayer();
         const [nx, ny] = toWorld(next);
         return Phaser.Math.Angle.Between(this.x, this.y, nx, ny);
+    }
+
+    /**
+     * Front of the A* route to the player's tile. Rebuilt when the player changes tile or the enemy is
+     * knocked off it; trimmed as waypoints are reached or the one after comes into clear reach.
+     */
+    private nextWaypoint(): Point | undefined {
+        const { player, floor } = this.world;
+        const here = toTile(this.x, this.y);
+        const goal = toTile(player.body.center.x, player.body.center.y);
+        const goalKey = `${goal.x},${goal.y}`;
+        const first = this.path[0];
+        const offPath =
+            !first ||
+            !hasLineOfSight(floor, toTileSpace(this.x, this.y), {
+                x: first.x + 0.5,
+                y: first.y + 0.5,
+            });
+        if (goalKey !== this.pathGoal || offPath) {
+            this.path = findPath(floor, here, goal) ?? [];
+            this.pathGoal = goalKey;
+        }
+
+        const [head, after] = this.path;
+        if (
+            head &&
+            Phaser.Math.Distance.Between(this.x, this.y, ...toWorld(head)) < WAYPOINT_REACHED
+        ) {
+            this.path.shift();
+        } else if (after && this.canWalkStraightTo(after)) {
+            this.path.shift();
+        }
+        return this.path[0];
+    }
+
+    /** Clear line to a tile centre for the whole body width, not just its centre. */
+    private canWalkStraightTo(tile: Point): boolean {
+        const { floor } = this.world;
+        const from = toTileSpace(this.x, this.y);
+        const to = { x: tile.x + 0.5, y: tile.y + 0.5 };
+        const length = Math.hypot(to.x - from.x, to.y - from.y) || 1;
+        const offset = this.radius / TILE_SIZE;
+        const nx = (-(to.y - from.y) / length) * offset;
+        const ny = ((to.x - from.x) / length) * offset;
+        return [-1, 0, 1].every((side) =>
+            hasLineOfSight(
+                floor,
+                { x: from.x + nx * side, y: from.y + ny * side },
+                { x: to.x + nx * side, y: to.y + ny * side },
+            ),
+        );
     }
 
     move(angle: number, speedScale = 1): void {
